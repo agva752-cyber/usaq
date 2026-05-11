@@ -2,35 +2,43 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { getScenarios, getConfidenceSpecialistFeedback, Scenario } from '../services/geminiService';
-import { Loader2, Award, ArrowRight, RefreshCcw } from 'lucide-react';
+import { Loader2, Award, ArrowRight, RefreshCcw, Wifi, WifiOff } from 'lucide-react';
+import { SCENARIOS as OFFLINE_SCENARIOS } from '../constants';
 
 interface ConfidenceTrainingProps {
   onComplete: () => void;
 }
 
+type TrainingMode = 'selection' | 'online' | 'offline';
+
 export function ConfidenceTraining({ onComplete }: ConfidenceTrainingProps) {
+  const [mode, setMode] = React.useState<TrainingMode>('selection');
   const [scenarios, setScenarios] = React.useState<Scenario[]>([]);
   const [index, setIndex] = React.useState(0);
   const [selectedOption, setSelectedOption] = React.useState<number | null>(null);
   const [showFeedback, setShowFeedback] = React.useState(false);
   const [score, setScore] = React.useState(0);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(false);
   const [showEvaluation, setShowEvaluation] = React.useState(false);
   const [specialistFeedback, setSpecialistFeedback] = React.useState<string | null>(null);
 
-  const loadScenarios = async () => {
-    setIsLoading(true);
-    const newScenarios = await getScenarios();
-    setScenarios(newScenarios);
+  const startTraining = async (selectedMode: TrainingMode) => {
+    setMode(selectedMode);
     setIndex(0);
     setScore(0);
     setShowEvaluation(false);
-    setIsLoading(false);
-  };
+    setSelectedOption(null);
+    setShowFeedback(false);
 
-  React.useEffect(() => {
-    loadScenarios();
-  }, []);
+    if (selectedMode === 'online') {
+      setIsLoading(true);
+      const newScenarios = await getScenarios();
+      setScenarios(newScenarios);
+      setIsLoading(false);
+    } else if (selectedMode === 'offline') {
+      setScenarios(OFFLINE_SCENARIOS);
+    }
+  };
 
   const handleSelect = (optIdx: number) => {
     if (selectedOption !== null) return;
@@ -57,13 +65,63 @@ export function ConfidenceTraining({ onComplete }: ConfidenceTrainingProps) {
     }
   };
 
+  if (mode === 'selection') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#061a12] via-green-dark to-[#0D7377] p-6 flex flex-col items-center justify-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl text-center"
+        >
+          <div className="w-20 h-20 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <h2 className="text-4xl">🧠</h2>
+          </div>
+          <h2 className="font-serif text-2xl font-bold text-white mb-2">Cəsarət Ssenariləri</h2>
+          <p className="text-white/60 mb-8 text-sm">Bir rejim seç və özünə inamını artır!</p>
+
+          <div className="grid gap-4">
+            <button
+              onClick={() => startTraining('online')}
+              className="flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/15 transition-all text-left group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-teal/20 flex items-center justify-center text-teal group-hover:scale-110 transition-transform">
+                <Wifi size={24} />
+              </div>
+              <div>
+                <div className="text-white font-bold">Onlayn Rejim</div>
+                <div className="text-white/40 text-xs italic">Süni intellekt tərəfindən yeni ssenarilər</div>
+              </div>
+              <ArrowRight className="ml-auto text-white/20" size={20} />
+            </button>
+
+            <button
+              onClick={() => startTraining('offline')}
+              className="flex items-center gap-4 p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/15 transition-all text-left group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-orange/20 flex items-center justify-center text-orange group-hover:scale-110 transition-transform">
+                <WifiOff size={24} />
+              </div>
+              <div>
+                <div className="text-white font-bold">Oflayn Rejim</div>
+                <div className="text-white/40 text-xs italic">Sentyabr ayının ssenariləri (10 sual)</div>
+              </div>
+              <ArrowRight className="ml-auto text-white/20" size={20} />
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   const scenario = scenarios[index];
 
   if (isLoading && !showEvaluation) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#061a12] via-green-dark to-[#0D7377] flex flex-col items-center justify-center p-6 text-center">
         <Loader2 className="animate-spin text-gold mb-4" size={48} />
-        <h3 className="text-white font-serif text-xl mb-2">Cəsarət Ssenariləri Hazırlanır...</h3>
+        <h3 className="text-white font-serif text-xl mb-2">
+          {mode === 'online' ? 'Onlayn Ssenarilər Hazırlanır...' : 'Yüklənir...'}
+        </h3>
         <p className="text-white/50 text-sm italic">Uşağınız üçün ən maraqlı və öyrədici ssenari seçilir.</p>
       </div>
     );
@@ -75,12 +133,20 @@ export function ConfidenceTraining({ onComplete }: ConfidenceTrainingProps) {
         <div className="text-6xl mb-4">🔮</div>
         <h3 className="text-white font-serif text-xl mb-2">Bağışla, bir xəta oldu</h3>
         <p className="text-white/50 text-sm italic mb-6">Ssenariləri yükləyə bilmədik. Yenidən yoxlayaq?</p>
-        <button 
-          onClick={() => loadScenarios()}
-          className="bg-gold px-8 py-3 rounded-xl font-bold text-background flex items-center gap-2"
-        >
-          <RefreshCcw size={20} /> Yenidən yoxla
-        </button>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => startTraining(mode)}
+            className="bg-gold px-6 py-3 rounded-xl font-bold text-background flex items-center gap-2"
+          >
+            <RefreshCcw size={20} /> Yenidən yoxla
+          </button>
+          <button 
+            onClick={() => setMode('selection')}
+            className="bg-white/10 px-6 py-3 rounded-xl font-bold text-white flex items-center gap-2"
+          >
+            Geri
+          </button>
+        </div>
       </div>
     );
   }
@@ -98,7 +164,7 @@ export function ConfidenceTraining({ onComplete }: ConfidenceTrainingProps) {
           
           <div className="bg-white/5 rounded-2xl p-6 mb-8 border border-white/10">
             <div className="text-4xl font-bold mb-1 text-gold">{percentage}%</div>
-            <div className="text-xs text-white/40 uppercase tracking-widest font-bold">Cəsarət Faizi</div>
+            <div className="text-xs text-white/40 uppercase tracking-widest font-bold">Cəsarət Faizi ({score}/{scenarios.length})</div>
           </div>
 
           <div className="text-left mb-8">
@@ -110,7 +176,7 @@ export function ConfidenceTraining({ onComplete }: ConfidenceTrainingProps) {
 
           <div className="space-y-3">
             <button
-              onClick={() => loadScenarios()}
+              onClick={() => setMode('selection')}
               className="w-full bg-gold py-4 rounded-2xl font-serif font-bold text-background flex items-center justify-center gap-2 shadow-xl hover:scale-105 transition-transform"
             >
               Yenidən Başla <RefreshCcw size={20} />
@@ -125,7 +191,18 @@ export function ConfidenceTraining({ onComplete }: ConfidenceTrainingProps) {
     <div className="min-h-screen bg-gradient-to-br from-[#061a12] via-green-dark to-[#0D7377] p-6 pt-10">
       <div className="max-w-md mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="font-serif text-2xl font-bold text-white">🧠 Özünə İnam</h2>
+          <button 
+            onClick={() => setMode('selection')}
+            className="text-white/40 text-xs flex items-center gap-1 hover:text-white transition-colors"
+          >
+            ← Geri
+          </button>
+          <h2 className="font-serif text-xl font-bold text-white">🧠 Özünə İnam</h2>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] bg-white/10 text-white/60 px-2 py-0.5 rounded italic">
+              {mode === 'online' ? 'Onlayn' : 'Oflayn'}
+            </span>
+          </div>
         </div>
         
         <div className="flex gap-1 mb-8">

@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Playfair Display", serif;
+  --font-body: "Lora", serif;
+  
+  --color-gold: #F4C430;
+  --color-teal: #0D7377;
+  --color-green-light: #2DCC70;
+  --color-green-dark: #1E5128;
+  --color-orange: #E86A2E;
+  --color-purple: #7B68EE;
+  --color-dark: #061a12;
+}
+
+@layer base {
+  body {
+    @apply bg-dark text-white font-body;
+  }
+}
+
+.star-twinkle {
+  animation: twinkle var(--dur, 3s) var(--delay, 0s) infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes clap {
+  from { transform: translateY(0); }
+  to { transform: translateY(-6px); }
+}
+
+.animate-clap {
+  animation: clap 0.3s infinite alternate;
+}

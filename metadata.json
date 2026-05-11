@@ -1,0 +1,11 @@
+{
+  "name": "Səssiz Uşaqların Səsi",
+  "description": "Uşaqların nitq inkişafı və özünə inamını artırmaq üçün fərdi məşq platforması.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "speech_recognition",
+    "ai_feedback"
+  ]
+}
